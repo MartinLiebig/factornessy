@@ -23,33 +23,38 @@ def get_prices(index_code, start_date="19900101", normalize=True):
 
     if normalize is True:
         first_value = df["level_eod"].iloc[0]
-        df["level_eod"] = df["level_eod"]/first_value
+        df["level_eod"] = df["level_eod"] / first_value
     df.rename(columns={'calc_date': 'date'}, inplace=True)
     df.set_index("date")
-
 
     df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
     return df
 
 
 def get_common_index_codes():
-    index_codes = {"MSCI World": "990100", "Value": "705130", "Quality": "702787", "Multi-Factor": "706536",
-                   "Momentum": "703755", "Small-Cap": "106230", "High Dividend": "136064",
-                   "Low Volatility (World)":"129896", "Small-Cap (Value)":"139249"
-                   }
+    index_codes = {
+        "MSCI World": {"code": "990100", "region": "Developed"},
+        "Value": {"code": "705130", "region": "Developed"},
+        "Quality": {"code": "702787", "region": "Developed"},
+        "Multi-Factor": {"code": "706536", "region": "Developed"},
+        "Momentum": {"code": "703755", "region": "Developed"},
+        "Small-Cap": {"code": "106230", "region": "Developed"},
+        "Low Volatility (World)": {"code": "129896", "region": "Developed"},
+        "Small-Cap (Value)": {"code": "139249", "region": "US"}
+    }
     return index_codes
 
 
 class FactorEstimator:
 
-    def estimate(self, index_code,start_date):
-        data = get_prices(index_code,start_date=start_date)
+    def estimate(self, index_code, start_date, region="Developed"):
+        data = get_prices(index_code, start_date=start_date)
 
         data['Returns'] = data['level_eod'].pct_change()  # Create daily returns column
         data['Returns'] = data['Returns'].dropna()  # Remove values of N/A
 
         stock_factor_mat = pd.merge(data,
-                                    self.__get_ff_factors__(),
+                                    self.__get_ff_factors__(region=region),
                                     left_on="date",
                                     right_on="date")  # Merging the stock and factor returns dataframes together
 
@@ -63,11 +68,13 @@ class FactorEstimator:
 
         return FF5_coeff, FF5, stock_factor_mat
 
-    def __get_ff_factors__(self):
+    def __get_ff_factors__(self, region):
         # factors = pdr.DataReader(name='F-F_Research_Data_5_Factors_2x3_Daily',
         #                          data_source='famafrench')[0]
-        factors = pd.read_csv("ressources/F-F_Research_Data_5_Factors_2x3_daily.CSV", skiprows=range(0, 3))
-
+        if region == "US":
+            factors = pd.read_csv("ressources/F-F_Research_Data_5_Factors_2x3_daily.CSV", skiprows=range(0, 3))
+        elif region == "Developed":
+            factors = pd.read_csv("ressources/Developed_5_Factors_Daily.CSV", skiprows=range(0, 3))
         factors.rename(columns={'Mkt-RF': 'MKT', "Unnamed: 0": "date"}, inplace=True)
         factors['date'] = pd.to_datetime(factors['date'], format='%Y%m%d')
         factors.set_index("date")
