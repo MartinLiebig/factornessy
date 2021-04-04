@@ -7,7 +7,7 @@ if __name__ == '__main__':
     index_codes = get_common_index_codes()
     for index_code in index_codes.values():
         print(index_code)
-        factors, model, data = estimator.estimate(index_code)
+        factors, model, data = estimate(index_code)
         #print("Multi")
         print(factors)
         print("r2",model.rsquared)
