@@ -40,7 +40,8 @@ def get_common_index_codes():
         "Momentum": {"code": "703755", "region": "Developed"},
         "Small-Cap": {"code": "106230", "region": "Developed"},
         "Low Volatility (World)": {"code": "129896", "region": "Developed"},
-        "Small-Cap (Value)": {"code": "139249", "region": "US"}
+        "Small-Cap (Value)": {"code": "139249", "region": "US"},
+        "High-Dividend (World)":{"code":"136064","region":"Developed"}
     }
     return index_codes
 
