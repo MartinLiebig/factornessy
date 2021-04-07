@@ -1,17 +1,20 @@
 import pandas as pd
-import pandas_datareader as pdr
 import statsmodels.formula.api as sm
-import yfinance as yf
 import requests
 import json
+from asset_allocation import AssetAllocation
 
 
-def get_prices(index_code, start_date="19900101", normalize=True, variant="GRTR"):
+def get_historic_stock_data(index_code, start_date="19900101", normalize=True, variant="GRTR"):
     """
-
-    :rtype: pd.DataFrame
+    Get historic index data directly from MSCI
+    :type normalize: bool
+    :param index_code: Code for the index
+    :param start_date: start date in format YYYYMMdd
+    :param normalize: If set to true the first value is 1, otherwise its the raw data
+    :param variant: "GRTR", "NETR" or STDR. Wether to accumulate (GRTR), accumulate with taxes (NETR) or take the raw index
+    :return: a data frame with the historic data for this given index
     """
-
     # frequency = "END_OF_MONTH"
     frequency = "DAILY"
     json_data = requests.get(
@@ -32,18 +35,43 @@ def get_prices(index_code, start_date="19900101", normalize=True, variant="GRTR"
 
 
 def get_common_index_codes():
+    """
+    Get a dictionary with the index code we analyze. Also has the vendor, ISIN and region. For SPDR we include the ticker
+    symbol which we need to get the holdings.
+    :rtype: dict
+    """
     index_codes = {
-        "MSCI World": {"code": "990100", "region": "Developed"},
-        "Value": {"code": "705130", "region": "Developed"},
-        "Quality": {"code": "702787", "region": "Developed"},
-        "Multi-Factor": {"code": "706536", "region": "Developed"},
-        "Momentum": {"code": "703755", "region": "Developed"},
-        "Small-Cap": {"code": "106230", "region": "Developed"},
-        "Low Volatility (World)": {"code": "129896", "region": "Developed"},
-        "Small-Cap (Value)": {"code": "139249", "region": "US"},
-        "High-Dividend (World)":{"code":"136064","region":"Developed"}
+        "MSCI World": {"code": "990100", "region": "Developed", "ISIN": "IE00BJ0KDQ92", "vendor": "Xtrackers"},
+        "Value": {"code": "705130", "region": "Developed", "ISIN": "IE00BL25JM42", "vendor": "Xtrackers"},
+        "Quality": {"code": "702787", "region": "Developed", "ISIN": "IE00BL25JL35", "vendor": "Xtrackers"},
+        "Multi-Factor": {"code": "706536", "region": "Developed", "ISIN": "IE00BZ0PKT83", "vendor": "iShares"},
+        "Momentum": {"code": "703755", "region": "Developed", "ISIN": "IE00BL25JP72", "vendor": "Xtrackers"},
+        "Small-Cap": {"code": "106230", "region": "Developed", "ISIN": "IE00BF4RFH31", "vendor": "iShares"},
+        "Low Volatility (World)": {"code": "129896", "region": "Developed", "ISIN": "IE00BL25JN58",
+                                   "vendor": "Xtrackers"},
+        "Small-Cap (Value)": {"code": "139249", "region": "US", "ISIN": "IE00BSPLC413", "vendor": "SPDR",
+                              "ticker": "zprv-gy"},
+        "High-Dividend (World)": {"code": "136064", "region": "Developed", "ISIN": "IE00BCHWNQ94",
+                                  "vendor": "Xtrackers"}
     }
     return index_codes
+
+
+def create_index_of_indices(df, name, asset_alloc) -> pd.DataFrame:
+    """
+    :type asset_alloc: AssetAllocation
+    :type name: str
+    :type df: pd.DataFrame
+    :param df: the original dataframe which holds the index prices
+    :param name: the name of the new index of indices
+    :param asset_alloc: the allocation of the new index of indices
+    :return: df with a new column called name holding the prices of the mixed indices.
+    """
+    df[name] = 0
+
+    for key, value in asset_alloc.allocations.items():
+        df[name] += value * df[key]
+    return df
 
 
 def __get_path__(region):
@@ -70,13 +98,13 @@ def __get_ff_factors__(region) -> pd.DataFrame:
 
 
 def get_average_factors(region) -> pd.DataFrame:
-    factors = __get_ff_factors__(region).reindex().drop(["date","RF"],axis=1)
+    factors = __get_ff_factors__(region).reindex().drop(["date", "RF"], axis=1)
 
     return factors.agg(['mean'])
 
 
 def estimate(index_code, start_date, region="Developed"):
-    data = get_prices(index_code, start_date=start_date)
+    data = get_historic_stock_data(index_code, start_date=start_date)
 
     data['Returns'] = data['level_eod'].pct_change()  # Create daily returns column
     data['Returns'] = data['Returns'].dropna()  # Remove values of N/A
@@ -95,5 +123,3 @@ def estimate(index_code, start_date, region="Developed"):
     FF5_coeff = FF5.params
 
     return FF5_coeff, FF5, stock_factor_mat
-
-
