@@ -5,7 +5,7 @@ import json
 from asset_allocation import AssetAllocation
 
 
-def get_historic_stock_data(index_code, start_date="19900101", normalize=True, variant="GRTR"):
+def get_historic_stock_data(index_code, start_date="19900101", normalize=True, variant="GRTR",frequency="DAILY"):
     """
     Get historic index data directly from MSCI
     :type normalize: bool
@@ -16,7 +16,7 @@ def get_historic_stock_data(index_code, start_date="19900101", normalize=True, v
     :return: a data frame with the historic data for this given index
     """
     # frequency = "END_OF_MONTH"
-    frequency = "DAILY"
+    #frequency = "DAILY"
     json_data = requests.get(
         "https://app2.msci.com/products/service/index/indexmaster/getLevelDataForGraph?currency_symbol=USD&index_variant=" + variant + "&start_date=" + start_date + "&end_date=20210101&data_frequency=" + frequency + "&index_codes=" + index_code).content
     y = json.loads(json_data)
