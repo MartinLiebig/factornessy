@@ -70,7 +70,7 @@ def create_index_of_indices(df, name, asset_alloc) -> pd.DataFrame:
     df[name] = 0
 
     for key, value in asset_alloc.allocations.items():
-        df[name] += value * df[key]
+        df[name] += value * df.loc[:,key]
     return df
 
 
