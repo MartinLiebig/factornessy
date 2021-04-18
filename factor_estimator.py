@@ -56,6 +56,19 @@ def get_common_index_codes():
     }
     return index_codes
 
+def get_em_index_codes():
+    """
+    Get a dictionary with the index code we analyze. Also has the vendor, ISIN and region. For SPDR we include the ticker
+    symbol which we need to get the holdings.
+    :rtype: dict
+    """
+    index_codes = {
+        "EM": {"code": "664220", "region": "EM", "ISIN": "  IE00B4L5YC18", "vendor": "iShares"},
+        "EM IMI": {"code": "664220", "region": "EM", "ISIN": " IE00BKM4GZ66", "vendor": "iShares"},
+    }
+    return index_codes
+
+
 
 def create_index_of_indices(df, name, asset_alloc) -> pd.DataFrame:
     """
