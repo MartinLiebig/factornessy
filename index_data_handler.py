@@ -24,6 +24,7 @@ class IndexDataHandler():
         self.normalize = normalize
 
     def get_available_indices(self, region="Developed"):
+
         return {k: v for k, v in self.available_indices.items() if v["region"] == region}
 
     def get_historic_stock_data(self,index_code):
@@ -52,7 +53,7 @@ class IndexDataHandler():
 
         data = data.rename(columns={'calc_date': 'date'})
         data['date'] = pd.to_datetime(data['date'], format='%Y%m%d')
-        #data = data.set_index("date")
+        data = data.set_index("date")
 
         return data
 
