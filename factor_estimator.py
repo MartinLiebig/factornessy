@@ -1,74 +1,7 @@
 import pandas as pd
 import statsmodels.formula.api as sm
-import requests
-import json
+from index_data_handler import IndexDataHandler
 from asset_allocation import AssetAllocation
-
-
-def get_historic_stock_data(index_code, start_date="19900101", normalize=True, variant="GRTR",frequency="DAILY"):
-    """
-    Get historic index data directly from MSCI
-    :type normalize: bool
-    :param index_code: Code for the index
-    :param start_date: start date in format YYYYMMdd
-    :param normalize: If set to true the first value is 1, otherwise its the raw data
-    :param variant: "GRTR", "NETR" or STDR. Wether to accumulate (GRTR), accumulate with taxes (NETR) or take the raw index
-    :return: a data frame with the historic data for this given index
-    """
-    # frequency = "END_OF_MONTH"
-    #frequency = "DAILY"
-    json_data = requests.get(
-        "https://app2.msci.com/products/service/index/indexmaster/getLevelDataForGraph?currency_symbol=USD&index_variant=" + variant + "&start_date=" + start_date + "&end_date=20210101&data_frequency=" + frequency + "&index_codes=" + index_code).content
-    y = json.loads(json_data)
-    data = y['indexes']['INDEX_LEVELS']
-
-    df = pd.DataFrame.from_dict(data)
-
-    if normalize is True:
-        first_value = df["level_eod"].iloc[0]
-        df["level_eod"] = df["level_eod"] / first_value
-    df.rename(columns={'calc_date': 'date'}, inplace=True)
-    df.set_index("date")
-
-    df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
-    return df
-
-
-def get_common_index_codes():
-    """
-    Get a dictionary with the index code we analyze. Also has the vendor, ISIN and region. For SPDR we include the ticker
-    symbol which we need to get the holdings.
-    :rtype: dict
-    """
-    index_codes = {
-        "MSCI World": {"code": "990100", "region": "Developed", "ISIN": "IE00BJ0KDQ92", "vendor": "Xtrackers"},
-        "Value": {"code": "705130", "region": "Developed", "ISIN": "IE00BL25JM42", "vendor": "Xtrackers"},
-        "Quality": {"code": "702787", "region": "Developed", "ISIN": "IE00BL25JL35", "vendor": "Xtrackers"},
-        "Multi-Factor": {"code": "706536", "region": "Developed", "ISIN": "IE00BZ0PKT83", "vendor": "iShares"},
-        "Momentum": {"code": "703755", "region": "Developed", "ISIN": "IE00BL25JP72", "vendor": "Xtrackers"},
-        "Small-Cap": {"code": "106230", "region": "Developed", "ISIN": "IE00BF4RFH31", "vendor": "iShares"},
-        "Low Volatility (World)": {"code": "129896", "region": "Developed", "ISIN": "IE00BL25JN58",
-                                   "vendor": "Xtrackers"},
-        "Small-Cap (Value)": {"code": "139249", "region": "US", "ISIN": "IE00BSPLC413", "vendor": "SPDR",
-                              "ticker": "zprv-gy"},
-        "High-Dividend (World)": {"code": "136064", "region": "Developed", "ISIN": "IE00BCHWNQ94",
-                                  "vendor": "Xtrackers"}
-    }
-    return index_codes
-
-def get_em_index_codes():
-    """
-    Get a dictionary with the index code we analyze. Also has the vendor, ISIN and region. For SPDR we include the ticker
-    symbol which we need to get the holdings.
-    :rtype: dict
-    """
-    index_codes = {
-        "EM": {"code": "664220", "region": "EM", "ISIN": "  IE00B4L5YC18", "vendor": "iShares"},
-        "EM IMI": {"code": "664220", "region": "EM", "ISIN": " IE00BKM4GZ66", "vendor": "iShares"},
-    }
-    return index_codes
-
-
 
 def create_index_of_indices(df, name, asset_alloc) -> pd.DataFrame:
     """
@@ -83,7 +16,7 @@ def create_index_of_indices(df, name, asset_alloc) -> pd.DataFrame:
     df[name] = 0
 
     for key, value in asset_alloc.allocations.items():
-        df[name] += value * df.loc[:,key]
+        df[name] += value * df.loc[:, key]
     return df
 
 
@@ -117,7 +50,8 @@ def get_average_factors(region) -> pd.DataFrame:
 
 
 def estimate(index_code, start_date, region="Developed"):
-    data = get_historic_stock_data(index_code, start_date=start_date)
+    data_handler = IndexDataHandler(start_date=start_date, normalize=True)
+    data = data_handler.get_historic_stock_data(index_code)
 
     data['Returns'] = data['level_eod'].pct_change()  # Create daily returns column
     data['Returns'] = data['Returns'].dropna()  # Remove values of N/A

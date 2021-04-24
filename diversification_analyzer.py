@@ -1,6 +1,6 @@
 import requests
 import pandas as pd
-from factor_estimator import get_common_index_codes
+
 import numpy as np
 
 def get_xtrackers(ISIN: str, name: str):
@@ -36,19 +36,3 @@ def get_iShares(key: str, name: str):
     dataset[name] = dataset[name] / 100
     return dataset
 
-
-if __name__ == '__main__':
-    indices = get_common_index_codes()
-    data = []
-    for key in indices:
-        # print(key)
-        # if (indices[key]["vendor"] == "Xtrackers"):
-        #     data.append(get_data(indices[key]["ISIN"],key))
-        if (indices[key]["vendor"] == "SPDR"):
-            get_spdr(indices["ticker"])
-    df = data[0]
-    for i in range(1, len(data)):
-        print(i)
-        df = df.merge(data[i], how="outer", on="Name")
-    print(df)
-    print(df.columns)
