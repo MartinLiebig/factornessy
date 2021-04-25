@@ -70,3 +70,5 @@ def estimate(index_code, start_date, region="Developed"):
     FF5_coeff = FF5.params
 
     return FF5_coeff, FF5, stock_factor_mat
+
+
