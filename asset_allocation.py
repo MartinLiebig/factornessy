@@ -7,12 +7,36 @@ class AssetAllocation:
         self.allocations = {}
 
     def set_allocations(self, array):
+        """
+        Sets the asset allocation with an array
+        :param array: asset allocations in the order of index_names
+        :return: the asset allocation
+        """
         for i, value in enumerate(array):
             self.allocations[self.index_names[i]] = value
         return self
 
     def set_allocation(self, name, value):
+        """
+        Sets a single value
+        :type value: float
+        :type name: String
+        :param name: asset name
+        :param value: allocation. has to be [0,1]
+        :return: the allocation itself
+        """
         self.allocations[name] = value
+        return self
+
+    def set_allocation_by_dict(self, allocation_dict):
+        """
+        Sets the allocation with a dictionary
+        :type allocation_dict: dict
+        :param allocation_dict: dictionay with names as key and allocation as value
+        :return: the allocation itself
+        """
+        for key, value in allocation_dict.items():
+            self.allocations[key] = value
         return self
 
     def distribute_evenly(self):
