@@ -1,6 +1,6 @@
 import pathlib
 from datetime import datetime
-
+import os
 import requests
 import json
 import pandas as pd
@@ -27,11 +27,29 @@ class IndexDataHandler():
 
         return {k: v for k, v in self.available_indices.items() if v["region"] == region}
 
-    def get_historic_stock_data(self,index_code):
+    def get_historic_stock_data(self, index_code, reload=False):
         """
         Get the data for a given index_code
+        :param reload: if set to true we will reload the data from the API. Otherwise the cache is used
         :param index_code: index code from MSCI, can be obtained in available_indices or from MSCI website
         :return: a dataframe with two columns: date and level_eod. If normalize was set to true its normalized.
+        """
+        path = os.path.join("cache", str(index_code) + "_" + self.frequency + ".csv")
+        if pathlib.Path(path).is_file() is False or reload is True:
+            df = self._reload_stock_data_from_api(index_code)
+            df.to_csv(path)
+            return df
+        else:
+            print("reading",path)
+            df = pd.read_csv(path)
+            df['date'] = pd.to_datetime(df['date'])
+            df = df.set_index("date")
+            return df
+
+    def _reload_stock_data_from_api(self, index_code) -> pd.DataFrame:
+        """
+        :param index_code: index_code: index code from MSCI, can be obtained in available_indices or from MSCI website
+        :return:
         """
         url = "https://app2.msci.com/products/service/index/indexmaster/getLevelDataForGraph?currency_symbol=USD" \
               f"&index_variant={self.variant}" \
@@ -80,4 +98,3 @@ class IndexDataHandler():
 if __name__ == "__main__":
     ih = IndexDataHandler()
     print(ih._load_index_codes())
-
