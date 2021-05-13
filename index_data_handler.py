@@ -10,11 +10,10 @@ class IndexDataHandler():
     def __init__(self, variant="GRTR", start_date="19900101", end_date=None, frequency="DAILY", normalize=True):
         """
         Get historic index data directly from MSCI
-        :param name: name of the index
-        :param index_code: Code for the index
         :param start_date: start date in format YYYYMMdd
         :param variant: "GRTR", "NETR" or STRD. Whether to accumulate (GRTR), accumulate with taxes (NETR) or take the raw index (STRD)
         :param normalize if True all values will be normalized to its startdate
+        :param frequency defines the sample frequency either DAILY or END_OF_MONTH
         """
         self.frequency = frequency
         self.end_date = end_date or datetime.today()
@@ -34,13 +33,13 @@ class IndexDataHandler():
         :param index_code: index code from MSCI, can be obtained in available_indices or from MSCI website
         :return: a dataframe with two columns: date and level_eod. If normalize was set to true its normalized.
         """
-        path = os.path.join("cache", str(index_code) + "_" + self.frequency + ".csv")
+        path = os.path.join("cache", str(index_code) + "_" + self.frequency + "_" + self.start_date + ".csv")
         if pathlib.Path(path).is_file() is False or reload is True:
             df = self._reload_stock_data_from_api(index_code)
             df.to_csv(path)
             return df
         else:
-            print("reading",path)
+            print("reading", path)
             df = pd.read_csv(path)
             df['date'] = pd.to_datetime(df['date'])
             df = df.set_index("date")
