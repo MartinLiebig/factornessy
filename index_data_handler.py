@@ -4,6 +4,7 @@ import os
 import requests
 import json
 import pandas as pd
+import yfinance as yf
 
 
 class IndexDataHandler():
@@ -44,6 +45,31 @@ class IndexDataHandler():
             df['date'] = pd.to_datetime(df['date'])
             df = df.set_index("date")
             return df
+
+    # def get_rf(self):
+    #     df = pd.read_excel("ressources/TB3MS.xls", skiprows=range(0, 10))
+    #     df = df.rename(columns={"observation_date": "date", "TB3MS": "TB"})
+    #     df = df.set_index("date")
+    #     df2 = pd.read_excel("ressources/FPCPITOTLZGUSA.xls", skiprows=range(0, 10))
+    #     df = df.rename(columns={"observation_date": "date", "FPCPITOTLZGUSA": "Inflation"})
+    #     df2 = df2.set_index("date")
+    #     df = df.merge(df2, how='inner', left_index=True, right_index=True)
+    #
+    #     return df
+
+    def get_yahoo_finance_data(self, ticker):
+
+        data = yf.Ticker(ticker)
+        date = self.start_date[0:4] + "-" + self.start_date[4:6] + "-" + self.start_date[6:8]
+        df = data.history(start=date)
+        df = pd.DataFrame(df["Open"])
+
+        if self.normalize is True:
+            first_value = df["Open"].iloc[0]
+            df["Open"] = df["Open"] / first_value
+
+        df = df.rename(columns={'Open': ticker})
+        return df
 
     def _reload_stock_data_from_api(self, index_code) -> pd.DataFrame:
         """
@@ -95,5 +121,10 @@ class IndexDataHandler():
 
 
 if __name__ == "__main__":
-    ih = IndexDataHandler()
-    print(ih._load_index_codes())
+    ih = IndexDataHandler(start_date="19940101")
+    df = ih.get_yahoo_finance_data("^GDAXI")
+
+    print(df)
+
+    # df = ih.get_historic_stock_data(703755,reload=False)
+    # print(df)
